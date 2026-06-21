@@ -14,7 +14,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.splashscreen.SplashScreen.installSplashScreen
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
@@ -53,26 +53,26 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // Vivid brand palette
-private val NavyDeep = Color(0xFFFFF8D6)
-private val Navy = Color(0xFFFBF390)
-private val Indigo = Color(0xFFF2C94C)
-private val Violet = Color(0xFFE8A23D)
+private val NavyDeep = Color(0xFFFFF8D6) // warm cream base
+private val Navy = Color(0xFFFBF390) // logo gold
+private val Indigo = Color(0xFFF2C94C) // deeper amber
+private val Violet = Color(0xFFE8A23D) // honey accent
 private val Gold = Color(0xFFF2B84B)
 private val GoldLight = Color(0xFFFFD685)
 private val Mint = Color(0xFF2ECC9A)
 private val Coral = Color(0xFFFF6B6B)
 private val Sky = Color(0xFF4FC3F7)
-private val CardBg = Color(0xFF1A1A1A)
+private val CardBg = Color(0xFF1A1A1A) // ink, matches bird silhouette
 
 class MainActivity : ComponentActivity() {
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { /* no op, optional permission */ }
+    ) { /* no-op, optional permission */ }
 
     private val legacyStoragePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { /* rechecked on resume */ }
+    ) { /* re-checked on resume */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -551,13 +551,13 @@ fun HelgaScreen(activity: ComponentActivity) {
                 Text("About", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.7f))
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Helga v1.1 | built by Antony Wekesa (jempress)",
+                    "Helga v1.1 | built by Anthony Wekesa (jempress)",
                     fontSize = 12.sp,
                     color = Color.White.copy(alpha = 0.6f)
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "Licensed under GNU GPLv3 free and open source",
+                    "Licensed under GNU GPLv3 — free and open source",
                     fontSize = 12.sp,
                     color = Color.White.copy(alpha = 0.6f)
                 )

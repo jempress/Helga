@@ -1,6 +1,6 @@
 # Helga — WiFi FTP Server (Android)
 
-**Author:** Antony wekesa ([jempress](https://github.com/jempress))
+**Author:** Anthony wekesa ([jempress](https://github.com/jempress))
 **License:** GNU General Public License v3.0 — see [`LICENSE`](LICENSE)
 
 Android app that turns your phone into a WiFi FTP server

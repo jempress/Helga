@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Foreground service hosting an embedded FTP server rooted at the
- * device's shared storage directory so files dropped there are
+ * device's shared storage directory, so files dropped there are
  * reachable from Windows Explorer / any FTP client over WiFi.
  */
 class FtpServerService : Service() {
@@ -38,7 +38,7 @@ class FtpServerService : Service() {
 
         @Volatile var isRunning: Boolean = false
 
-        // Lightweight live connection counter updated by the Ftplet below.
+        // Lightweight live connection counter, updated by the Ftplet below.
         // Polled by the UI (no extra dependency like Flow/LiveData needed).
         val connectedClients = AtomicInteger(0)
 
