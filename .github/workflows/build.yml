@@ -18,6 +18,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate app icons from logo source
+        run: |
+          pip install pillow numpy
+          python3 scripts/generate_icons.py assets/logo_source.jpg
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 

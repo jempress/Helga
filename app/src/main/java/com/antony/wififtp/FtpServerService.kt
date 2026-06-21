@@ -2,10 +2,9 @@ package com.antony.wififtp
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
-import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Environment
 import android.os.IBinder
@@ -13,17 +12,18 @@ import androidx.core.app.NotificationCompat
 import org.apache.ftpserver.DataConnectionConfigurationFactory
 import org.apache.ftpserver.FtpServer
 import org.apache.ftpserver.FtpServerFactory
-import org.apache.ftpserver.ftplet.Authority
+import org.apache.ftpserver.ftplet.*
 import org.apache.ftpserver.listener.ListenerFactory
 import org.apache.ftpserver.usermanager.impl.BaseUser
 import org.apache.ftpserver.usermanager.impl.WritePermission
 import java.io.File
 import java.net.NetworkInterface
 import java.util.Collections
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Foreground service hosting an embedded FTP server rooted at the
- * device's shared storage directory, so files dropped there are
+ * device's shared storage directory so files dropped there are
  * reachable from Windows Explorer / any FTP client over WiFi.
  */
 class FtpServerService : Service() {
@@ -31,16 +31,20 @@ class FtpServerService : Service() {
     private var ftpServer: FtpServer? = null
 
     companion object {
-        const val DEFAULT_PORT = 2121
         const val PASSIVE_PORT_RANGE_START = 2300
         const val PASSIVE_PORT_RANGE_END = 2400
         const val CHANNEL_ID = "ftp_server_channel"
         const val ACTION_STOP = "com.antony.wififtp.STOP"
 
         @Volatile var isRunning: Boolean = false
-        @Volatile var port: Int = DEFAULT_PORT
-        @Volatile var username: String = "android"
-        @Volatile var password: String = "1234"
+
+        // Lightweight live connection counter, updated by the Ftplet below.
+        // Polled by the UI (no extra dependency like Flow/LiveData needed).
+        val connectedClients = AtomicInteger(0)
+
+        val port: Int get() = Settings.port
+        val username: String get() = Settings.username
+        val password: String get() = Settings.password
 
         fun getLocalIpAddress(): String? {
             try {
@@ -62,6 +66,7 @@ class FtpServerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        Settings.init(applicationContext)
         createNotificationChannel()
     }
 
@@ -86,7 +91,7 @@ class FtpServerService : Service() {
 
         // Passive mode is what Windows Explorer/most FTP clients use for the data
         // connection. Without an explicit port range, the OS picks a random ephemeral
-        // port each time, which is unreliable behind NAT/hotspot — pin a small range
+        // port each time which is unreliable behind NAT/hotspot pin a small range
         // and advertise this device's own LAN IP so clients connect back correctly.
         val dataConfig = DataConnectionConfigurationFactory()
         dataConfig.setPassivePorts("$PASSIVE_PORT_RANGE_START-$PASSIVE_PORT_RANGE_END")
@@ -94,6 +99,7 @@ class FtpServerService : Service() {
         listenerFactory.dataConnectionConfiguration = dataConfig.createDataConnectionConfiguration()
 
         serverFactory.addListener("default", listenerFactory.createListener())
+        serverFactory.ftplets["connectionTracker"] = ConnectionTrackerFtplet()
 
         // Root directory exposed over FTP: public shared storage
         val rootDir: File = Environment.getExternalStorageDirectory()
@@ -112,12 +118,14 @@ class FtpServerService : Service() {
         ftpServer = serverFactory.createServer()
         ftpServer?.start()
         isRunning = true
+        connectedClients.set(0)
     }
 
     private fun stopFtp() {
         ftpServer?.stop()
         ftpServer = null
         isRunning = false
+        connectedClients.set(0)
     }
 
     override fun onDestroy() {
@@ -142,10 +150,12 @@ class FtpServerService : Service() {
     private fun buildNotification(): android.app.Notification {
         val ip = getLocalIpAddress() ?: "unknown"
         val stopIntent = Intent(this, FtpServerService::class.java).apply { action = ACTION_STOP }
-        val stopPendingIntent = android.app.PendingIntent.getService(
-            this, 0, stopIntent,
-            android.app.PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_IMMUTABLE
+        } else {
+            0
+        }
+        val stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, pendingIntentFlags)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Helga is running")
@@ -154,5 +164,18 @@ class FtpServerService : Service() {
             .setOngoing(true)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
             .build()
+    }
+
+    /** Tracks live client connections so the UI can show "X connected". */
+    private class ConnectionTrackerFtplet : DefaultFtplet() {
+        override fun onConnect(session: FtpSession): FtpletResult {
+            connectedClients.incrementAndGet()
+            return FtpletResult.DEFAULT
+        }
+
+        override fun onDisconnect(session: FtpSession): FtpletResult {
+            if (connectedClients.get() > 0) connectedClients.decrementAndGet()
+            return FtpletResult.DEFAULT
+        }
     }
 }
