@@ -14,10 +14,12 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.splashscreen.SplashScreen.installSplashScreen
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -51,34 +53,32 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // Vivid brand palette
-private val NavyDeep = Color(0xFFFFF8D6) // warm cream base
-private val Navy = Color(0xFFFBF390) // logo gold
-private val Indigo = Color(0xFFF2C94C) // deeper amber
-private val Violet = Color(0xFFE8A23D) // honey accent
+private val NavyDeep = Color(0xFFFFF8D6)
+private val Navy = Color(0xFFFBF390)
+private val Indigo = Color(0xFFF2C94C)
+private val Violet = Color(0xFFE8A23D)
 private val Gold = Color(0xFFF2B84B)
 private val GoldLight = Color(0xFFFFD685)
 private val Mint = Color(0xFF2ECC9A)
 private val Coral = Color(0xFFFF6B6B)
 private val Sky = Color(0xFF4FC3F7)
-private val CardBg = Color(0xFF1A1A1A) // ink, matches bird silhouette
+private val CardBg = Color(0xFF1A1A1A)
 
 class MainActivity : ComponentActivity() {
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { /* no-op, optional permission */ }
+    ) { /* no op, optional permission */ }
 
     private val legacyStoragePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { /* re-checked on resume */ }
+    ) { /* rechecked on resume */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         Settings.init(applicationContext)
 
-        // Edge to edge: let our gradient flow behind the status bar and
-        // navigation bar like modern Android apps, instead of leaving
-        // plain black system bars boxing the UI in.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
@@ -262,7 +262,7 @@ fun HelgaScreen(activity: ComponentActivity) {
                     WarningCard(
                         icon = Icons.Filled.Lock,
                         title = "Storage access needed",
-                        body = "Helga needs \"All files access\" to show your folders over FTP. Without it, connections will succeed but folders will look empty.",
+                        body = "Helga needs \"All files access\" to show your folders over FTP. Without it connections will succeed but folders will look empty.",
                         accent = Coral,
                         buttonLabel = "Grant access"
                     ) {
@@ -389,7 +389,8 @@ fun HelgaScreen(activity: ComponentActivity) {
 
                 OutlinedButton(
                     onClick = { runDiagnostic() },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldLight),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = CardBg),
+                    border = BorderStroke(1.dp, CardBg.copy(alpha = 0.4f)),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -462,7 +463,13 @@ fun HelgaScreen(activity: ComponentActivity) {
             onDismissRequest = { showSettings = false },
             containerColor = CardBg
         ) {
-            Column(modifier = Modifier.padding(24.dp).padding(bottom = 24.dp)) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .padding(bottom = 24.dp)
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+            ) {
                 Text("Settings", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 Spacer(Modifier.height(20.dp))
 
@@ -536,6 +543,24 @@ fun HelgaScreen(activity: ComponentActivity) {
                 ) {
                     Text("Save")
                 }
+
+                Spacer(Modifier.height(24.dp))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                Spacer(Modifier.height(16.dp))
+
+                Text("About", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.7f))
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Helga v1.1 | built by Antony Wekesa (jempress)",
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "Licensed under GNU GPLv3 free and open source",
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
             }
         }
     }

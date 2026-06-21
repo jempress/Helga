@@ -38,7 +38,7 @@ class FtpServerService : Service() {
 
         @Volatile var isRunning: Boolean = false
 
-        // Lightweight live connection counter, updated by the Ftplet below.
+        // Lightweight live connection counter updated by the Ftplet below.
         // Polled by the UI (no extra dependency like Flow/LiveData needed).
         val connectedClients = AtomicInteger(0)
 
@@ -91,7 +91,7 @@ class FtpServerService : Service() {
 
         // Passive mode is what Windows Explorer/most FTP clients use for the data
         // connection. Without an explicit port range, the OS picks a random ephemeral
-        // port each time which is unreliable behind NAT/hotspot pin a small range
+        // port each time, which is unreliable behind NAT/hotspot — pin a small range
         // and advertise this device's own LAN IP so clients connect back correctly.
         val dataConfig = DataConnectionConfigurationFactory()
         dataConfig.setPassivePorts("$PASSIVE_PORT_RANGE_START-$PASSIVE_PORT_RANGE_END")

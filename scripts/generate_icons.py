@@ -2,6 +2,17 @@
 Builds every Android icon file Helga needs, straight from the original
 full logo (icon artwork + "VALKYRIE" wordmark on a flat background).
 
+It auto-detects the icon vs. the text by scanning for horizontal bands of
+content separated by a gap of pure background — the tallest band is taken
+as the icon, the text band below it is discarded. No manual cropping needed,
+even if the source image changes later.
+
+Run locally:
+    pip install pillow numpy --break-system-packages
+    python3 scripts/generate_icons.py assets/logo_source.png
+
+This is also run automatically by .github/workflows/build.yml before every
+build, so the icon always reflects whatever is committed at assets/logo_source.*
 """
 import sys
 from pathlib import Path
@@ -17,13 +28,13 @@ DENSITIES = {
     "mipmap-xxxhdpi": 192,
 }
 
-NOISE_THRESHOLD = 60          # per pixel color distance to count as "not background"
+NOISE_THRESHOLD = 60          # per-pixel color distance to count as "not background"
 ROW_CONTENT_FRACTION = 0.01   # min fraction of row width that must differ from bg to count as content
-FOREGROUND_SCALE = 0.62       # adaptive icon safe zone scale
+FOREGROUND_SCALE = 0.62       # adaptive icon safe-zone scale
 
 
 def detect_background_color(img: np.ndarray) -> np.ndarray:
-    # Sample all four corners and average more robust than a single pixel
+    # Sample all four corners and average — more robust than a single pixel
     # if there's any JPEG compression noise right at the very corner.
     h, w, _ = img.shape
     corners = [img[0, 0], img[0, w - 1], img[h - 1, 0], img[h - 1, w - 1]]
@@ -62,11 +73,11 @@ def extract_icon_only(source: Image.Image) -> Image.Image:
     if not row_bands:
         raise ValueError("Could not detect any artwork — check NOISE_THRESHOLD or the source image.")
 
-    # The icon is the tallest band any wordmark/text band will be shorter.
+    # The icon is the tallest band; any wordmark/text band will be shorter.
     icon_band = max(row_bands, key=lambda b: b[1] - b[0])
     row_start, row_end = icon_band
 
-    # Now finds the horizontal extent of content within just those rows.
+    # Now find the horizontal extent of content within just those rows.
     col_mask = mask[row_start:row_end, :]
     col_counts = col_mask.sum(axis=0)
     col_threshold = (row_end - row_start) * ROW_CONTENT_FRACTION
@@ -76,11 +87,11 @@ def extract_icon_only(source: Image.Image) -> Image.Image:
 
     cropped = source.crop((int(col_start), int(row_start), int(col_end), int(row_end)))
 
-    # Pad to a square canvas (centered, background filled) so downstream
+    # Pad to a square canvas (centered, background-filled) so downstream
     # resizing doesn't distort the artwork's aspect ratio.
     bg_color = tuple(int(c) for c in bg)
     side = max(cropped.width, cropped.height)
-    # adds a little breathing room around the artwork
+    # add a little breathing room around the artwork
     side = int(side * 1.15)
     square = Image.new("RGB", (side, side), bg_color)
     offset = ((side - cropped.width) // 2, (side - cropped.height) // 2)
@@ -99,7 +110,7 @@ def circular_mask(img: Image.Image) -> Image.Image:
 
 
 def extract_foreground(img: Image.Image, bg_color, threshold=40) -> Image.Image:
-    """Keys out the flat background color for the adaptive icon foreground layer."""
+    """Keys out the flat background color for the adaptive-icon foreground layer."""
     img = img.convert("RGBA")
     arr = np.array(img)
     diff = np.abs(arr[:, :, :3].astype(int) - np.array(bg_color[:3])).sum(axis=2)
@@ -144,7 +155,7 @@ def main():
         fg = pad_to_safe_zone(foreground_master, size)
         fg.save(d / "ic_launcher_foreground.png")
 
-    # Keeps the adaptive icon background color in sync with the actual logo background.
+    # Keep the adaptive-icon background color in sync with the actual logo background.
     hex_color = "#{:02X}{:02X}{:02X}".format(*[int(c) for c in bg_color[:3]])
     colors_xml = out_root / "values" / "colors.xml"
     colors_xml.parent.mkdir(parents=True, exist_ok=True)
