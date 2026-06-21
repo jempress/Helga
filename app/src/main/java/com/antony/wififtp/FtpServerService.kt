@@ -91,7 +91,7 @@ class FtpServerService : Service() {
 
         // Passive mode is what Windows Explorer/most FTP clients use for the data
         // connection. Without an explicit port range, the OS picks a random ephemeral
-        // port each time, which is unreliable behind NAT/hotspot — pin a small range
+        // port each time, which is unreliable behind NAT/hotspot pin a small range
         // and advertise this device's own LAN IP so clients connect back correctly.
         val dataConfig = DataConnectionConfigurationFactory()
         dataConfig.setPassivePorts("$PASSIVE_PORT_RANGE_START-$PASSIVE_PORT_RANGE_END")
@@ -160,7 +160,7 @@ class FtpServerService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Helga is running")
             .setContentText("ftp://$ip:$port")
-            .setSmallIcon(android.R.drawable.stat_sys_upload)
+            .setSmallIcon(R.drawable.ic_notification)
             .setOngoing(true)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
             .build()

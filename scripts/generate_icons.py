@@ -2,8 +2,8 @@
 Builds every Android icon file Helga needs, straight from the original
 full logo (icon artwork + "VALKYRIE" wordmark on a flat background).
 
-It auto-detects the icon vs. the text by scanning for horizontal bands of
-content separated by a gap of pure background — the tallest band is taken
+It auto detects the icon vs. the text by scanning for horizontal bands of
+content separated by a gap of pure background the tallest band is taken
 as the icon, the text band below it is discarded. No manual cropping needed,
 even if the source image changes later.
 
@@ -28,13 +28,34 @@ DENSITIES = {
     "mipmap-xxxhdpi": 192,
 }
 
-NOISE_THRESHOLD = 60          # per-pixel color distance to count as "not background"
+# Android status bar notification icons: standard 24dp baseline, scaled per density.
+NOTIFICATION_SIZES = {
+    "drawable-mdpi": 24,
+    "drawable-hdpi": 36,
+    "drawable-xhdpi": 48,
+    "drawable-xxhdpi": 72,
+    "drawable-xxxhdpi": 96,
+}
+
+
+def make_notification_icon(foreground: Image.Image, size: int) -> Image.Image:
+    """Android strips color from status-bar notification icons and renders
+    them as a flat white silhouette — so build that directly: keep the
+    artwork's alpha shape, force every opaque pixel to pure white."""
+    resized = foreground.resize((size, size), Image.LANCZOS)
+    arr = np.array(resized.convert("RGBA"))
+    arr[:, :, 0] = 255
+    arr[:, :, 1] = 255
+    arr[:, :, 2] = 255
+    return Image.fromarray(arr, "RGBA")
+
+NOISE_THRESHOLD = 60          # per pixel color distance to count as "not background"
 ROW_CONTENT_FRACTION = 0.01   # min fraction of row width that must differ from bg to count as content
 FOREGROUND_SCALE = 0.62       # adaptive icon safe-zone scale
 
 
 def detect_background_color(img: np.ndarray) -> np.ndarray:
-    # Sample all four corners and average — more robust than a single pixel
+    # Sample all four corners and average more robust than a single pixel
     # if there's any JPEG compression noise right at the very corner.
     h, w, _ = img.shape
     corners = [img[0, 0], img[0, w - 1], img[h - 1, 0], img[h - 1, w - 1]]
@@ -71,7 +92,7 @@ def extract_icon_only(source: Image.Image) -> Image.Image:
 
     row_bands = find_content_bands(mask, arr.shape[1], ROW_CONTENT_FRACTION)
     if not row_bands:
-        raise ValueError("Could not detect any artwork — check NOISE_THRESHOLD or the source image.")
+        raise ValueError("Could not detect any artwork check NOISE_THRESHOLD or the source image.")
 
     # The icon is the tallest band; any wordmark/text band will be shorter.
     icon_band = max(row_bands, key=lambda b: b[1] - b[0])
@@ -155,7 +176,7 @@ def main():
         fg = pad_to_safe_zone(foreground_master, size)
         fg.save(d / "ic_launcher_foreground.png")
 
-    # Keep the adaptive-icon background color in sync with the actual logo background.
+    # Keep the adaptive icon background color in sync with the actual logo background.
     hex_color = "#{:02X}{:02X}{:02X}".format(*[int(c) for c in bg_color[:3]])
     colors_xml = out_root / "values" / "colors.xml"
     colors_xml.parent.mkdir(parents=True, exist_ok=True)
@@ -167,7 +188,25 @@ def main():
     )
 
     print(f"Icon background detected as {hex_color}")
+    # Dedicated high resolution splash icon, density independent (drawable-nodpi),
+    # since the small mipmap sizes (max 192px) look blurry when the splash screen
+    # API scales them up to its larger on screen display size.
+    splash_dir = out_root / "drawable-nodpi"
+    splash_dir.mkdir(parents=True, exist_ok=True)
+    splash_fg = pad_to_safe_zone(foreground_master, 1024, scale=FOREGROUND_SCALE)
+    splash_fg.save(splash_dir / "splash_icon.png")
+
+    # Status bar notification icon — white silhouette, no padding/safe-zone
+    # needed since it's not being masked by a launcher shape.
+    notif_source = foreground_master.resize((512, 512), Image.LANCZOS)
+    for folder, size in NOTIFICATION_SIZES.items():
+        d = out_root / folder
+        d.mkdir(parents=True, exist_ok=True)
+        make_notification_icon(notif_source, size).save(d / "ic_notification.png")
+
     print(f"Generated icons for {len(DENSITIES)} densities under {out_root}")
+    print("Generated high-res splash_icon.png in drawable-nodpi/")
+    print(f"Generated ic_notification.png for {len(NOTIFICATION_SIZES)} densities")
 
 
 if __name__ == "__main__":

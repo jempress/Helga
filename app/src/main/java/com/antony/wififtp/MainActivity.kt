@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -62,17 +63,17 @@ private val GoldLight = Color(0xFFFFD685)
 private val Mint = Color(0xFF2ECC9A)
 private val Coral = Color(0xFFFF6B6B)
 private val Sky = Color(0xFF4FC3F7)
-private val CardBg = Color(0xFF1A1A1A) // ink, matches bird silhouette
+private val CardBg = Color(0xFF1A1A1A)
 
 class MainActivity : ComponentActivity() {
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { /* no-op, optional permission */ }
+    ) { /* no op, optional permission */ }
 
     private val legacyStoragePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { /* re-checked on resume */ }
+    ) { /* rechecked on resume */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -244,12 +245,16 @@ fun HelgaScreen(activity: ComponentActivity) {
 
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(88.dp)
                         .clip(CircleShape)
                         .background(Brush.linearGradient(listOf(Gold, GoldLight))),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.Wifi, contentDescription = null, tint = NavyDeep, modifier = Modifier.size(36.dp))
+                    Image(
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        contentDescription = "Helga logo",
+                        modifier = Modifier.size(56.dp)
+                    )
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -551,13 +556,13 @@ fun HelgaScreen(activity: ComponentActivity) {
                 Text("About", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.7f))
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Helga v1.1 | built by Anthony Wekesa (jempress)",
+                    "Helga v1.1 | built by Anthony Wekesa (github:jempress)",
                     fontSize = 12.sp,
                     color = Color.White.copy(alpha = 0.6f)
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "Licensed under GNU GPLv3 — free and open source",
+                    "Licensed under GNU GPLv3 free and open source",
                     fontSize = 12.sp,
                     color = Color.White.copy(alpha = 0.6f)
                 )
