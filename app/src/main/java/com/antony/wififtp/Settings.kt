@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 
 /**
- * Lightweight persisted settings — avoids any external DB dependency to
+ * Lightweight persisted settings avoids any external DB dependency to
  * keep the app footprint small. Backed by a single SharedPreferences file.
  */
 object Settings {

@@ -63,7 +63,7 @@ private val GoldLight = Color(0xFFFFD685)
 private val Mint = Color(0xFF2ECC9A)
 private val Coral = Color(0xFFFF6B6B)
 private val Sky = Color(0xFF4FC3F7)
-private val CardBg = Color(0xFF1A1A1A)
+private val CardBg = Color(0xFF1A1A1A) // ink, matches bird silhouette
 
 class MainActivity : ComponentActivity() {
 
@@ -73,13 +73,15 @@ class MainActivity : ComponentActivity() {
 
     private val legacyStoragePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { /* rechecked on resume */ }
+    ) { /* re-checked on resume */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         Settings.init(applicationContext)
 
+        // Edge to edge: let our gradient flow behind the status bar and
+        // navigation bar
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
@@ -450,8 +452,8 @@ fun HelgaScreen(activity: ComponentActivity) {
                 ) {
                     Text(
                         "Tip: if Windows Explorer still refuses to connect, use the copied " +
-                            "address with login in WinSCP or FileZilla instead they're far more " +
-                            "reliable than Explorer's built in FTP client.",
+                            "address-with-login in WinSCP or FileZilla instead — they're far more " +
+                            "reliable than Explorer's built-in FTP client.",
                         fontSize = 12.sp,
                         color = Color.White.copy(alpha = 0.7f),
                         modifier = Modifier.padding(16.dp)
@@ -556,7 +558,7 @@ fun HelgaScreen(activity: ComponentActivity) {
                 Text("About", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.7f))
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Helga v1.1 | built by Anthony Wekesa (github:jempress)",
+                    "Helga v1.1 built by Anthony Wekesa (jempress)",
                     fontSize = 12.sp,
                     color = Color.White.copy(alpha = 0.6f)
                 )

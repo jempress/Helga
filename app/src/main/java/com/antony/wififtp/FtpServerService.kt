@@ -4,10 +4,13 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Environment
 import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import org.apache.ftpserver.DataConnectionConfigurationFactory
 import org.apache.ftpserver.FtpServer
@@ -29,6 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger
 class FtpServerService : Service() {
 
     private var ftpServer: FtpServer? = null
+    private var wifiLock: WifiManager.WifiLock? = null
+    private var wakeLock: PowerManager.WakeLock? = null
 
     companion object {
         const val PASSIVE_PORT_RANGE_START = 2300
@@ -85,9 +90,12 @@ class FtpServerService : Service() {
     private fun startFtp() {
         if (isRunning) return
 
+        acquireLocks()
+
         val serverFactory = FtpServerFactory()
         val listenerFactory = ListenerFactory()
         listenerFactory.port = port
+        getLocalIpAddress()?.let { listenerFactory.serverAddress = it }
 
         // Passive mode is what Windows Explorer/most FTP clients use for the data
         // connection. Without an explicit port range, the OS picks a random ephemeral
@@ -126,6 +134,29 @@ class FtpServerService : Service() {
         ftpServer = null
         isRunning = false
         connectedClients.set(0)
+        releaseLocks()
+    }
+
+    private fun acquireLocks() {
+        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        @Suppress("DEPRECATION")
+        wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "Helga:wifiLock").apply {
+            setReferenceCounted(false)
+            acquire()
+        }
+
+        val powerManager = applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Helga:wakeLock").apply {
+            setReferenceCounted(false)
+            acquire()
+        }
+    }
+
+    private fun releaseLocks() {
+        wifiLock?.let { if (it.isHeld) it.release() }
+        wifiLock = null
+        wakeLock?.let { if (it.isHeld) it.release() }
+        wakeLock = null
     }
 
     override fun onDestroy() {
