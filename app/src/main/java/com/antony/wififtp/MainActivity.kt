@@ -452,7 +452,7 @@ fun HelgaScreen(activity: ComponentActivity) {
                 ) {
                     Text(
                         "Tip: if Windows Explorer still refuses to connect, use the copied " +
-                            "address-with-login in WinSCP or FileZilla instead — they're far more " +
+                            "address with login in WinSCP or FileZilla instead they're far more " +
                             "reliable than Explorer's built-in FTP client.",
                         fontSize = 12.sp,
                         color = Color.White.copy(alpha = 0.7f),
